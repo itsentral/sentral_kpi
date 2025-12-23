@@ -111,7 +111,7 @@ class Kpi extends Admin_Controller
         $month_num = isset($month_map[$month_name]) ? $month_map[$month_name] : '01';
         $periode = $current_year . '-' . $month_num . '-01';
 
-        $is_empty = ($value === '' || $value === null || floatval($value) == 0);
+        $is_empty = ($value === '' || $value === null);
 
         $existing = $this->db->get_where('kpi_realisations', [
           'kpi_item_id' => $kpi_item_id,
@@ -785,6 +785,7 @@ class Kpi extends Admin_Controller
       show_404();
     }
 
+    $is_closed = ($header->is_close == 1);
     $items = $this->Kpi_model->get_items_by_header($header_id);
 
     $item_ids = array_column($items, 'id');
@@ -845,7 +846,8 @@ class Kpi extends Admin_Controller
       'thresholds'       => $thresholds,
       'months'           => $months,
       'months_display'   => $months_with_year,
-      'periode_year'     => $periode_year
+      'periode_year'     => $periode_year,
+      'is_closed'        => $is_closed
     ];
 
     $this->template->render('kpi/realisasi_form', $data);
@@ -859,6 +861,46 @@ class Kpi extends Admin_Controller
       return number_format($val, 2, ',', '.') . '%';
     } else {
       return number_format($val, 0, ',', '.');
+    }
+  }
+
+  public function close_period()
+  {
+    $this->auth->restrict($this->managePermission);
+
+    $header_id = $this->input->post('header_id');
+
+    if (!$header_id || !is_numeric($header_id)) {
+      echo json_encode(['status' => 'error', 'message' => 'ID header tidak valid.']);
+      return;
+    }
+
+    $header = $this->Kpi_model->get_header($header_id);
+    if (!$header) {
+      echo json_encode(['status' => 'error', 'message' => 'Data KPI tidak ditemukan.']);
+      return;
+    }
+
+    if ($header->is_close == 1) {
+      echo json_encode(['status' => 'error', 'message' => 'Periode KPI ini sudah ditutup sebelumnya.']);
+      return;
+    }
+
+    $update = $this->db->where('id', $header_id)
+      ->update('kpi_headers', [
+        'is_close'   => 1,
+        'close_by'   => $this->auth->nama(),
+        'close_date' => date('Y-m-d H:i:s')
+      ]);
+
+
+    if ($update) {
+      echo json_encode([
+        'status'  => 'success',
+        'message' => 'Periode KPI tahun ' . $header->periode . ' untuk divisi ' . $header->divisi_name . ' berhasil ditutup.'
+      ]);
+    } else {
+      echo json_encode(['status' => 'error', 'message' => 'Gagal menutup periode. Silakan coba lagi.']);
     }
   }
 }

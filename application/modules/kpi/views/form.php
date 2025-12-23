@@ -270,7 +270,7 @@ $ENABLE_ADD = has_permission('KPI.Add');
                             <th>PIC</th>
                             <th>Target</th>
                             <th>Satuan</th>
-                            <th>Formula</th>
+                            <th>Deskripsi Formula</th>
                             <th>Sistem Penilaian</th>
                             <th class="bobot_col" style="display:none;">Bobot</th>
                             <th>Threshold</th>
@@ -360,10 +360,10 @@ $ENABLE_ADD = has_permission('KPI.Add');
         <tbody id="row_template">
             <tr>
                 <td>
-                    <input type="text" name="item[]" class="form-control" placeholder="Instagram Reach" autocomplete="off" required>
+                    <input type="text" name="item[]" class="form-control" placeholder="e.g. Instagram" autocomplete="off" required>
                 </td>
                 <td>
-                    <input type="text" name="indikator[]" class="form-control" placeholder="Deskripsi indikator" autocomplete="off" required>
+                    <input type="text" name="indikator[]" class="form-control" placeholder="e.g Deskripsi indikator" autocomplete="off" required>
                 </td>
                 <td>
                     <select name="pic_id[]" class="form-control pic-select" required style="width:100%">
@@ -374,7 +374,7 @@ $ENABLE_ADD = has_permission('KPI.Add');
                     </select>
                 </td>
                 <td>
-                    <input type="number" name="target[]" class="form-control target-input" step="1" placeholder="4000" required>
+                    <input type="number" name="target[]" class="form-control target-input" step="1" placeholder="e.g. 4000" required>
                 </td>
                 <td>
                     <select name="satuan[]" class="form-control satuan-select" required>
@@ -384,7 +384,7 @@ $ENABLE_ADD = has_permission('KPI.Add');
                     </select>
                 </td>
                 <td>
-                    <textarea name="formula[]" class="form-control" rows="3" placeholder="Jumlah jangkauan / rumus perhitungan" required></textarea>
+                    <textarea name="formula[]" class="form-control" rows="3" placeholder="e.g. Jumlah jangkauan / rumus perhitungan" required></textarea>
                 </td>
                 <td>
                     <select name="sistem_penilaian[]" class="form-control" required>

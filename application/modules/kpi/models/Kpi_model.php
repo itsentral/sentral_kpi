@@ -110,4 +110,5 @@ class Kpi_model extends BF_Model
 		}
 		return $data;
 	}
+
 }

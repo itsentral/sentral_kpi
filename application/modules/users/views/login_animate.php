@@ -15,10 +15,23 @@
     font-family: "Open Sans", Arial, sans-serif;
     min-height: 100vh;
     margin: 0;
-    background: url("<?= base_url(); ?>assets/img/wallpaper_harapan.jpg") 50% / cover fixed no-repeat;
+    background: url("<?= base_url(); ?>assets/img/bg_3.jpg") 50% / cover fixed no-repeat;
   }
 
   /* ====== Overlay (gelap + blur kaca) ====== */
+  /* .wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    min-height: 100vh;
+    width: 100%;
+    padding: 24px;
+    background: rgba(4, 40, 68, .55);
+    backdrop-filter: blur(6px) saturate(110%);
+    -webkit-backdrop-filter: blur(6px) saturate(110%);
+  } */
+
   .wrapper {
     display: flex;
     align-items: center;
@@ -28,10 +41,6 @@
     width: 100%;
     padding: 24px;
     background: rgba(4, 40, 68, .55);
-    /* gelap lembut */
-    backdrop-filter: blur(6px) saturate(110%);
-    /* efek kaca */
-    -webkit-backdrop-filter: blur(6px) saturate(110%);
   }
 
   /* ====== Card Login ====== */
@@ -39,17 +48,28 @@
     position: relative;
     width: 90%;
     max-width: 380px;
-    background: #fff;
+
+    /* Glass effect */
+    background: rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+
     border-radius: 16px;
-    border: 1px solid rgba(0, 0, 0, .06);
-    box-shadow: 0 12px 34px rgba(3, 24, 43, .25);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+
+    box-shadow:
+      0 10px 30px rgba(0, 0, 0, 0.25),
+      inset 0 1px 0 rgba(255, 255, 255, 0.25);
+
     padding: 22px 22px 24px;
   }
+
 
   /* Logo atas (opsional) */
   .login>span img {
     display: block;
     margin: 0px auto 30px;
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, .25));
   }
 
   /* ====== Field (input + icon) ====== */
@@ -64,7 +84,8 @@
     /* ruang ikon kiri */
     border: 1px solid #d7e1ea;
     border-radius: 10px;
-    background: #fff;
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(6px);
     color: #1f2a36;
     transition: all .18s ease;
   }
@@ -189,7 +210,7 @@
     <?= form_open($this->uri->uri_string(), ['id' => 'frm_login', 'name' => 'frm_login', 'class' => 'login', 'autocomplete' => 'off']) ?>
 
     <span>
-      <img src="<?= base_url('assets/images/harapan_logo.png'); ?>" width="25%" alt="Logo">
+      <img src="<?= base_url('assets/images/logo_kpi.png'); ?>" width="25%" alt="Logo">
     </span>
 
     <!-- Username -->

@@ -68,9 +68,20 @@ $ENABLE_SAVE = has_permission('KPI.Manage');
 
 <div class="box">
     <div class="box-header">
-        <h3 class="box-title">Isi Realisasi KPI <?= $periode_year ?> - Divisi <?= htmlspecialchars($header->divisi_name) ?></h3>
+        <?php if ($is_closed): ?>
+            View Realisasi KPI <?= $periode_year ?> - Divisi <?= htmlspecialchars($header->divisi_name) ?>
+        <?php else: ?>
+            Isi Realisasi KPI <?= $periode_year ?> - Divisi <?= htmlspecialchars($header->divisi_name) ?>
+        <?php endif; ?>
     </div>
     <div class="box-body">
+        <?php if ($is_closed): ?>
+            <div class="alert alert-danger alert-dismissible">
+                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+                <h4><i class="icon fa fa-lock"></i> Periode KPI Sudah Close</h4>
+                Data realisasi untuk tahun <?= $periode_year ?> telah final dan <strong>tidak dapat diubah lagi</strong>.<br>
+            </div>
+        <?php endif; ?>
         <form id="form_realisasi">
             <input type="hidden" name="header_id" value="<?= $header->id ?>">
             <input type="hidden" id="is_bobot" value="<?= $header->is_bobot ?>">
@@ -112,7 +123,7 @@ $ENABLE_SAVE = has_permission('KPI.Manage');
                                         <?php
                                         $existing_value = '';
                                         $month_number = str_pad($idx + 1, 2, '0', STR_PAD_LEFT);
-                                        $periode_key = date('Y') . '-' . $month_number;
+                                        $periode_key = $periode_year . '-' . $month_number; // Fix: gunakan periode_year, bukan date('Y')
 
                                         if (isset($realisations[$item->id])) {
                                             foreach ($realisations[$item->id] as $real) {
@@ -122,13 +133,21 @@ $ENABLE_SAVE = has_permission('KPI.Manage');
                                                 }
                                             }
                                         }
+
+                                        $input_disabled = $is_closed ? 'disabled' : '';
+                                        $input_readonly = $is_closed ? 'readonly' : '';
+                                        $bg_color = $is_closed ? 'style="background-color: #f9f9f9;"' : '';
                                         ?>
+
                                         <input type="text"
                                             name="realisasi[<?= $item->id ?>][<?= $month ?>]"
                                             class="form-control realisasi-input"
-                                            value="<?= $existing_value ?>"
+                                            value="<?= htmlspecialchars($existing_value) ?>"
                                             data-month="<?= $month ?>"
-                                            placeholder="0">
+                                            placeholder="0"
+                                            <?= $input_disabled ?>
+                                            <?= $input_readonly ?>
+                                            <?= $bg_color ?>>
                                     </td>
                                 <?php endforeach; ?>
                                 <td class="skor-realisasi text-center">-</td>
@@ -161,10 +180,17 @@ $ENABLE_SAVE = has_permission('KPI.Manage');
                 </table>
             </div>
 
-            <?php if ($ENABLE_SAVE): ?>
-                <button type="submit" class="btn btn-success"><i class="fa fa-save"></i> Simpan Realisasi</button>
-            <?php endif; ?>
-            <a href="<?= site_url('kpi') ?>" class="btn btn-default"><i class="fa fa-arrow-left"></i> Kembali</a>
+            <div class="text-right" style="margin-top: 20px;">
+                <?php if (!$is_closed && $ENABLE_SAVE): ?>
+                    <button type="submit" class="btn btn-success btn-sm">
+                        <i class="fa fa-save"></i> Simpan Realisasi
+                    </button>
+                <?php endif; ?>
+
+                <a href="<?= site_url('kpi') ?>" class="btn btn-default btn-sm">
+                    <i class="fa fa-arrow-left"></i> Kembali ke List KPI
+                </a>
+            </div>
         </form>
     </div>
 </div>
@@ -190,7 +216,7 @@ $ENABLE_SAVE = has_permission('KPI.Manage');
         }
 
         function getStatus(val, thresholds) {
-            if (!val || isNaN(val)) return null;
+            if (val === null || val === undefined || val === '' || isNaN(val)) return null;
 
             val = parseFloat(val);
 
@@ -252,15 +278,19 @@ $ENABLE_SAVE = has_permission('KPI.Manage');
             var filledMonthsCount = 0;
 
             $row.find('.realisasi-input').each(function() {
-                var val = parseFloat($(this).val());
-                values.push(isNaN(val) ? 0 : val);
-                if (!isNaN(val) && val > 0) {
-                    filledMonthsCount++;
+                var inputVal = $(this).val();
+
+                if (inputVal !== '' && inputVal !== null && inputVal !== undefined) {
+                    var val = parseFloat(inputVal);
+                    if (!isNaN(val)) {
+                        values.push(val);
+                        filledMonthsCount++;
+                    }
                 }
             });
 
             var skor = 0;
-            var validValues = values.filter(v => v > 0);
+            var validValues = values;
 
             if (validValues.length > 0) {
                 if (sistem === 0) {
@@ -271,36 +301,42 @@ $ENABLE_SAVE = has_permission('KPI.Manage');
                     skor = values.reduce((a, b) => a + b, 0);
                 } else if (sistem === 2) {
                     // Angka terakhir yang terisi
-                    skor = validValues[validValues.length - 1] || 0;
+                    skor = validValues[validValues.length - 1];
                 }
             }
 
             $row.find('.skor-realisasi').text(formatValue(skor, satuan));
 
             var skorPencapaian = 0;
-            if (skor > 0 && target > 0) {
+            if (target > 0 && filledMonthsCount > 0) {
                 var adjustedTarget = target;
 
                 if (sistem === 1 && filledMonthsCount > 0) {
                     adjustedTarget = target * filledMonthsCount;
                 }
 
+                // Skor pencapaian bisa 0 jika memang realisasi 0
                 skorPencapaian = (skor / adjustedTarget) * 100;
             }
 
-            $row.find('.skor-pencapaian').text(skorPencapaian > 0 ? skorPencapaian.toFixed(2) : '-');
+            $row.find('.skor-pencapaian').text(skorPencapaian >= 0 ? skorPencapaian.toFixed(2) : '-');
             $row.data('skor-pencapaian', skorPencapaian);
+
+            // Update warna cell
             $row.find('.realisasi-input').each(function() {
                 var $input = $(this);
                 var $cell = $input.closest('td');
-                var val = parseFloat($input.val());
+                var inputVal = $input.val();
 
                 $cell.removeClass('merah kuning hijau');
 
-                if (!isNaN(val) && val > 0) {
-                    var status = getStatus(val, thresholds);
-                    if (status) {
-                        $cell.addClass(status);
+                if (inputVal !== '' && inputVal !== null && inputVal !== undefined) {
+                    var val = parseFloat(inputVal);
+                    if (!isNaN(val)) {
+                        var status = getStatus(val, thresholds);
+                        if (status) {
+                            $cell.addClass(status);
+                        }
                     }
                 }
             });
@@ -312,10 +348,10 @@ $ENABLE_SAVE = has_permission('KPI.Manage');
             var totalIndikator = 0;
 
             $('tbody tr').each(function() {
-                var skorPencapaian = parseFloat($(this).data('skor-pencapaian')) || 0;
+                var skorPencapaian = parseFloat($(this).data('skor-pencapaian'));
                 var bobot = parseFloat($(this).data('bobot')) || 0;
 
-                if (skorPencapaian > 0) {
+                if (!isNaN(skorPencapaian)) {
                     totalIndikator++;
 
                     if (isBobot === 1) {
@@ -338,82 +374,88 @@ $ENABLE_SAVE = has_permission('KPI.Manage');
             $('#skor-kpi-final').text(skorKPIFinal.toFixed(2));
         }
 
-        $('.realisasi-input').on('blur', function() {
-            var $row = $(this).closest('tr');
-            updateRowCalculation($row);
-            updateSkorKPIFinal();
-        });
-
-        $('.realisasi-input').on('keypress', function(e) {
-            if (e.which === 13) {
-                e.preventDefault();
-                $(this).blur();
-            }
-        });
-
-        $('.realisasi-input').on('keypress', function(e) {
-            var charCode = e.which;
-            if (charCode === 46 || charCode === 8 || charCode === 9 || charCode === 27 || charCode === 13 ||
-                (charCode === 65 && e.ctrlKey === true) ||
-                (charCode === 67 && e.ctrlKey === true) ||
-                (charCode === 86 && e.ctrlKey === true) ||
-                (charCode === 88 && e.ctrlKey === true)) {
-                return;
-            }
-            if ((charCode < 48 || charCode > 57) && charCode !== 46) {
-                e.preventDefault();
-            }
-        });
-
         $('tbody tr').each(function() {
             updateRowCalculation($(this));
         });
         updateSkorKPIFinal();
 
-        $('#form_realisasi').submit(function(e) {
-            e.preventDefault();
+        <?php if ($is_closed): ?>
+            $('.realisasi-input').off('blur keypress');
+            $('#form_realisasi').off('submit');
+            $('.realisasi-input').css('cursor', 'not-allowed');
+        <?php else: ?>
+            $('.realisasi-input').on('blur', function() {
+                var $row = $(this).closest('tr');
+                updateRowCalculation($row);
+                updateSkorKPIFinal();
+            });
 
-            var $form = $(this);
-            var $submitBtn = $form.find('button[type="submit"]');
+            $('.realisasi-input').on('keypress', function(e) {
+                if (e.which === 13) {
+                    e.preventDefault();
+                    $(this).blur();
+                }
+            });
 
-            $submitBtn.prop('disabled', true);
+            $('.realisasi-input').on('keypress', function(e) {
+                var charCode = e.which;
+                if (charCode === 46 || charCode === 8 || charCode === 9 || charCode === 27 || charCode === 13 ||
+                    (charCode === 65 && e.ctrlKey === true) ||
+                    (charCode === 67 && e.ctrlKey === true) ||
+                    (charCode === 86 && e.ctrlKey === true) ||
+                    (charCode === 88 && e.ctrlKey === true)) {
+                    return;
+                }
+                if ((charCode < 48 || charCode > 57) && charCode !== 46) {
+                    e.preventDefault();
+                }
+            });
 
-            $.ajax({
-                url: '<?= site_url('kpi/save_realisasi') ?>',
-                type: 'POST',
-                data: $form.serialize(),
-                dataType: 'json',
-                success: function(res) {
-                    if (res.status === 'success') {
+            $('#form_realisasi').submit(function(e) {
+                e.preventDefault();
+
+                var $form = $(this);
+                var $submitBtn = $form.find('button[type="submit"]');
+
+                $submitBtn.prop('disabled', true);
+
+                $.ajax({
+                    url: '<?= site_url('kpi/save_realisasi') ?>',
+                    type: 'POST',
+                    data: $form.serialize(),
+                    dataType: 'json',
+                    success: function(res) {
+                        if (res.status === 'success') {
+                            Swal.fire({
+                                title: 'Berhasil!',
+                                text: res.status_info,
+                                icon: 'success',
+                                timer: 2000,
+                                showConfirmButton: false
+                            }).then(() => {
+                                window.location = '<?= site_url('kpi') ?>';
+                            });
+                        } else {
+                            Swal.fire({
+                                title: 'Gagal',
+                                text: res.message || 'Terjadi kesalahan',
+                                icon: 'error',
+                                confirmButtonText: 'OK'
+                            });
+                            $submitBtn.prop('disabled', false);
+                        }
+                    },
+                    error: function(xhr, status, error) {
                         Swal.fire({
-                            title: 'Berhasil!',
-                            text: res.status_info,
-                            icon: 'success',
-                            timer: 2000,
-                            showConfirmButton: false
-                        }).then(() => {
-                            window.location = '<?= site_url('kpi') ?>';
-                        });
-                    } else {
-                        Swal.fire({
-                            title: 'Gagal',
-                            text: res.message || 'Terjadi kesalahan',
+                            title: 'Error',
+                            text: 'Terjadi kesalahan saat menyimpan data',
                             icon: 'error',
                             confirmButtonText: 'OK'
                         });
                         $submitBtn.prop('disabled', false);
                     }
-                },
-                error: function(xhr, status, error) {
-                    Swal.fire({
-                        title: 'Error',
-                        text: 'Terjadi kesalahan saat menyimpan data',
-                        icon: 'error',
-                        confirmButtonText: 'OK'
-                    });
-                    $submitBtn.prop('disabled', false);
-                }
+                });
             });
-        });
+        <?php endif; ?>
     });
 </script>

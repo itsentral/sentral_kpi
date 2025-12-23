@@ -65,7 +65,7 @@ $ENABLE_DELETE  = has_permission('KPI.Delete');
 						<th width="5%">No</th>
 						<th>Divisi Name</th>
 						<th>Bobot Enabled</th>
-						<th>Created At</th>
+						<th>Create By</th>
 						<th width="20%">Action</th>
 					</tr>
 				</thead>
