@@ -57,7 +57,7 @@ class Kpi_model extends BF_Model
         return $this->db
             ->select('id, name, company_id')
             ->from('divisions')
-			->where('company_id', 'COM012')
+			->order_by('name', 'ASC')
 			->get()
             ->result();
     }
