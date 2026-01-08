@@ -5,7 +5,6 @@
   <meta charset="UTF-8">
   <title>// echo $idt->nm_perusahaan;</title>  -->
 <style>
-  /* ====== Global & Background ====== */
   html,
   body {
     height: 100%;
@@ -18,20 +17,6 @@
     background: url("<?= base_url(); ?>assets/img/bg_3.jpg") 50% / cover fixed no-repeat;
   }
 
-  /* ====== Overlay (gelap + blur kaca) ====== */
-  /* .wrapper {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    min-height: 100vh;
-    width: 100%;
-    padding: 24px;
-    background: rgba(4, 40, 68, .55);
-    backdrop-filter: blur(6px) saturate(110%);
-    -webkit-backdrop-filter: blur(6px) saturate(110%);
-  } */
-
   .wrapper {
     display: flex;
     align-items: center;
@@ -43,36 +28,27 @@
     background: rgba(4, 40, 68, .55);
   }
 
-  /* ====== Card Login ====== */
   .login {
     position: relative;
     width: 90%;
     max-width: 380px;
-
-    /* Glass effect */
     background: rgba(255, 255, 255, 0.18);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
-
     border-radius: 16px;
     border: 1px solid rgba(255, 255, 255, 0.28);
-
     box-shadow:
       0 10px 30px rgba(0, 0, 0, 0.25),
       inset 0 1px 0 rgba(255, 255, 255, 0.25);
-
     padding: 22px 22px 24px;
   }
 
-
-  /* Logo atas (opsional) */
   .login>span img {
     display: block;
     margin: 0px auto 30px;
     filter: drop-shadow(0 4px 6px rgba(0, 0, 0, .25));
   }
 
-  /* ====== Field (input + icon) ====== */
   .login .field {
     position: relative;
     margin-bottom: 12px;
@@ -116,7 +92,6 @@
     color: #2e86c1;
   }
 
-  /* ====== Tombol ====== */
   .login .btn {
     display: block;
     width: 100%;
@@ -144,7 +119,6 @@
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, .18);
   }
 
-  /* ====== Spinner state (opsional, jika kamu toggle .loading / .ok via JS) ====== */
   @keyframes spinner {
     from {
       transform: rotate(0)

@@ -71,12 +71,13 @@ class Kpi extends Admin_Controller
       return;
     }
 
+    $current_year = $header->periode;
+
     $this->db->trans_start();
 
     $saved_count = 0;
     $updated_count = 0;
     $deleted_count = 0;
-    $current_year = date('Y');
 
     $month_map = [
       'Jan' => '01',
