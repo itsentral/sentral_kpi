@@ -22,7 +22,7 @@ class Kpi_model extends BF_Model
 		return $this->db->order_by('id', 'DESC')
 			->where('is_delete', 0)
 			->get('kpi_headers')
-			->result();
+			->result_array();
 	}
 
 	public function get_header($id)

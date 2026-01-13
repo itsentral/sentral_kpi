@@ -60,32 +60,28 @@ $ENABLE_DELETE  = has_permission('KPI.Delete');
 		</div>
 		<div id="skeleton-loading">
 			<table class="table table-bordered">
-				<thead>
-					<tr>
-						<th width="5%">No</th>
-						<th>Divisi Name</th>
-						<th>Bobot Enabled</th>
-						<th>Create By</th>
-						<th width="20%">Action</th>
-					</tr>
-				</thead>
 				<tbody>
-					<?php for ($i = 0; $i < 5; $i++):
-					?>
+					<?php for ($i = 0; $i < 5; $i++): ?>
 						<tr>
-							<td>
+							<td width="5%">
 								<div class="skeleton skeleton-line short"></div>
 							</td>
 							<td>
 								<div class="skeleton skeleton-line medium"></div>
 							</td>
-							<td>
+							<td width="15%">
 								<div class="skeleton skeleton-line short"></div>
 							</td>
-							<td>
+							<td width="15%">
+								<div class="skeleton skeleton-line short"></div>
+							</td>
+							<td width="15%">
 								<div class="skeleton skeleton-line medium"></div>
 							</td>
-							<td>
+							<td width="15%">
+								<div class="skeleton skeleton-line medium"></div>
+							</td>
+							<td width="20%">
 								<div class="skeleton skeleton-line short"></div>
 							</td>
 						</tr>
@@ -141,6 +137,192 @@ $ENABLE_DELETE  = has_permission('KPI.Delete');
 		$(document).on('click', '.refresh-list-kpi', function(e) {
 			e.preventDefault();
 			loadKpiList();
+		});
+
+		$(document).on('click', '.btn-realisasi', function(e) {
+			e.preventDefault();
+
+			var headerId = $(this).data('id');
+			var isRealisasi = $(this).data('is-realisasi');
+			var divisi = $(this).data('divisi');
+
+			if (isRealisasi == 1 || isRealisasi == 2) {
+				window.location.href = '<?= site_url('kpi/realisasi/') ?>' + headerId;
+			} else {
+				Swal.fire({
+					title: 'Perhatian!',
+					html: `
+                        <div style="text-align: center;">
+                            <p class="text-warning" style="font-size: 14px;">
+                                <i class="fa fa-exclamation-triangle"></i> 
+                                <strong>Pastikan pengisian indikator sudah selesai dibuat!</strong>
+                            </p>
+                            <p style="font-size: 13px;" class="text-danger">
+                                Setelah Anda mulai mengisi realisasi, <strong>indikator tidak dapat diubah lagi</strong>.
+                            </p>
+                            <br>
+                            <p style="font-size: 13px;">Apakah Anda yakin ingin melanjutkan?</p>
+                        </div>
+                    `,
+					icon: 'warning',
+					showCancelButton: true,
+					confirmButtonColor: '#3085d6',
+					cancelButtonColor: '#d33',
+					confirmButtonText: '<i class="fa fa-check"></i> Ya, Lanjutkan',
+					cancelButtonText: '<i class="fa fa-times"></i> Batal',
+					customClass: {
+						popup: 'swal-wide'
+					}
+				}).then((result) => {
+					if (result.isConfirmed) {
+						window.location.href = '<?= site_url('kpi/realisasi/') ?>' + headerId;
+					}
+				});
+			}
+		});
+
+		$(document).on('click', '.btn-close-period', function(e) {
+			e.preventDefault();
+
+			var headerId = $(this).data('id');
+			var periode = $(this).data('periode');
+			var divisi = $(this).data('divisi');
+			var button = $(this);
+
+			Swal.fire({
+				title: 'Tutup Periode KPI?',
+				html: `
+                        <p class="text-danger">
+                            <i class="fa fa-exclamation-triangle"></i>
+                            Realisasi akan dikunci dan tidak dapat diubah.
+                        </p>
+                        `,
+
+				icon: 'warning',
+				showCancelButton: true,
+				confirmButtonColor: '#d33',
+				cancelButtonColor: '#3085d6',
+				confirmButtonText: '<i class="fa fa-lock"></i> Ya, Tutup Periode!',
+				cancelButtonText: '<i class="fa fa-times"></i> Batal',
+				width: '400px'
+			}).then((result) => {
+				if (result.isConfirmed) {
+					Swal.fire({
+						title: 'Memproses...',
+						text: 'Sedang menutup periode KPI',
+						allowOutsideClick: false,
+						didOpen: () => {
+							Swal.showLoading();
+						}
+					});
+					$.ajax({
+						url: '<?= site_url('kpi/close_period') ?>',
+						type: 'POST',
+						data: {
+							header_id: headerId,
+							<?= $this->security->get_csrf_token_name(); ?>: '<?= $this->security->get_csrf_hash(); ?>'
+						},
+						dataType: 'json',
+						success: function(res) {
+							if (res.status === 'success') {
+								Swal.fire({
+									title: 'Berhasil!',
+									text: 'Periode KPI telah ditutup.',
+									icon: 'success',
+									timer: 2000,
+									showConfirmButton: false
+								}).then(() => {
+									loadKpiList();
+								});
+							} else {
+								Swal.fire({
+									title: 'Gagal',
+									text: res.message,
+									icon: 'error'
+								});
+							}
+						},
+						error: function() {
+							Swal.fire({
+								title: 'Error!',
+								text: 'Tidak dapat terhubung ke server.',
+								icon: 'error'
+							});
+						}
+					});
+				}
+			});
+		});
+
+		$(document).on('click', '.btn-delete', function(e) {
+			e.preventDefault();
+
+			var url = $(this).attr('href');
+			var divisi = $(this).data('divisi');
+			var button = $(this);
+			var row = button.closest('tr');
+
+			Swal.fire({
+				title: 'Konfirmasi Hapus',
+				html: `Yakin ingin menghapus KPI untuk divisi <strong>${divisi}</strong>?<br><small class="text-danger">Data yang sudah dihapus tidak dapat dikembalikan!</small>`,
+				icon: 'warning',
+				showCancelButton: true,
+				confirmButtonColor: '#d33',
+				cancelButtonColor: '#3085d6',
+				confirmButtonText: '<i class="fa fa-trash"></i> Ya, Hapus!',
+				cancelButtonText: '<i class="fa fa-times"></i> Batal'
+			}).then((result) => {
+				if (result.isConfirmed) {
+					Swal.fire({
+						title: 'Menghapus...',
+						text: 'Sedang memproses',
+						icon: 'info',
+						allowOutsideClick: false,
+						allowEscapeKey: false,
+						showConfirmButton: false,
+						didOpen: () => {
+							Swal.showLoading();
+						}
+					});
+
+					$.ajax({
+						url: url,
+						type: 'GET',
+						dataType: 'json',
+						success: function(res) {
+							if (res.status === 'success') {
+								if (row.length) {
+									row.fadeOut(500, function() {
+										$(this).remove();
+									});
+								}
+								Swal.fire({
+									title: 'Berhasil!',
+									html: res.message,
+									icon: 'success',
+									showConfirmButton: false,
+									timer: 1500
+								});
+							} else {
+								Swal.fire({
+									title: 'Gagal',
+									text: res.message || 'Terjadi kesalahan saat menghapus.',
+									icon: 'error',
+									confirmButtonText: 'OK'
+								});
+							}
+						},
+						error: function() {
+							Swal.fire({
+								title: 'Error!',
+								text: 'Tidak dapat terhubung ke server. Coba lagi nanti.',
+								icon: 'error',
+								confirmButtonText: 'OK'
+							});
+						}
+					});
+				}
+			});
 		});
 	});
 </script>

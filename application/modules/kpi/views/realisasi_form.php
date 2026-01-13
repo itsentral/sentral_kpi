@@ -64,6 +64,90 @@ $ENABLE_SAVE = has_permission('KPI.Manage');
         font-size: 18px;
         font-weight: bold;
     }
+
+    .realisasi-input {
+        position: relative;
+    }
+
+    .indicator-tooltip {
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%) translateY(-8px);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 12px 16px;
+        border-radius: 8px;
+        font-size: 12px;
+        line-height: 1.6;
+        white-space: nowrap;
+        z-index: 10000 !important;
+        opacity: 0;
+        pointer-events: none;
+        transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        min-width: 280px;
+        text-align: left;
+    }
+
+    .indicator-tooltip::before {
+        content: '';
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        border: 8px solid transparent;
+        border-top-color: #764ba2;
+    }
+
+    .indicator-tooltip.show {
+        opacity: 1;
+        transform: translateX(-50%) translateY(-12px);
+    }
+
+    .indicator-tooltip.tooltip-bottom {
+        bottom: auto;
+        top: 100%;
+        transform: translateX(-50%) translateY(8px);
+    }
+
+    .indicator-tooltip.tooltip-bottom::before {
+        top: auto;
+        bottom: 100%;
+        border-top-color: transparent;
+        border-bottom-color: #667eea;
+    }
+
+    .indicator-tooltip.tooltip-bottom.show {
+        transform: translateX(-50%) translateY(12px);
+    }
+
+    .indicator-tooltip .tooltip-row {
+        display: flex;
+        margin-bottom: 6px;
+    }
+
+    .indicator-tooltip .tooltip-row:last-child {
+        margin-bottom: 0;
+    }
+
+    .indicator-tooltip .tooltip-label {
+        font-weight: 600;
+        min-width: 80px;
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    .indicator-tooltip .tooltip-value {
+        font-weight: 400;
+        color: #fff;
+        flex: 1;
+    }
+
+    .indicator-tooltip .tooltip-divider {
+        height: 1px;
+        background: rgba(255, 255, 255, 0.2);
+        margin: 8px 0;
+    }
 </style>
 
 <div class="box">
@@ -110,6 +194,10 @@ $ENABLE_SAVE = has_permission('KPI.Manage');
                                 data-satuan="<?= $item->satuan ?>"
                                 data-sistem="<?= $item->sistem_penilaian ?>"
                                 data-bobot="<?= $item->bobot ?>"
+                                data-item-name="<?= htmlspecialchars($item->item) ?>"
+                                data-indikator-name="<?= htmlspecialchars($item->indikator) ?>"
+                                data-target-display="<?= $item->target_display ?>"
+                                data-satuan-name="<?= htmlspecialchars(ucfirst($item->satuan)) ?>"
                                 data-thresholds='<?= $item->threshold_json ?>'>
 
                                 <td><?= htmlspecialchars($item->item) ?></td>
@@ -123,7 +211,7 @@ $ENABLE_SAVE = has_permission('KPI.Manage');
                                         <?php
                                         $existing_value = '';
                                         $month_number = str_pad($idx + 1, 2, '0', STR_PAD_LEFT);
-                                        $periode_key = $periode_year . '-' . $month_number; // Fix: gunakan periode_year, bukan date('Y')
+                                        $periode_key = $periode_year . '-' . $month_number;
 
                                         if (isset($realisations[$item->id])) {
                                             foreach ($realisations[$item->id] as $real) {
@@ -144,6 +232,12 @@ $ENABLE_SAVE = has_permission('KPI.Manage');
                                             class="form-control realisasi-input"
                                             value="<?= htmlspecialchars($existing_value) ?>"
                                             data-month="<?= $month ?>"
+                                            data-tooltip-month="<?= $month ?>"
+                                            data-tooltip-item="<?= htmlspecialchars($item->item) ?>"
+                                            data-tooltip-indikator="<?= htmlspecialchars($item->indikator) ?>"
+                                            data-tooltip-bobot="<?= ($item->bobot > 0) ? $item->bobot : '-' ?>"
+                                            data-tooltip-target="<?= $item->target_display ?>"
+                                            data-tooltip-satuan="<?= htmlspecialchars(ucfirst($item->satuan)) ?>"
                                             placeholder="0"
                                             <?= $input_disabled ?>
                                             <?= $input_readonly ?>
@@ -197,6 +291,79 @@ $ENABLE_SAVE = has_permission('KPI.Manage');
 
 <script>
     $(document).ready(function() {
+        function createModernTooltip($input) {
+            var month = $input.data('tooltip-month');
+            var item = $input.data('tooltip-item');
+            var indikator = $input.data('tooltip-indikator');
+            var bobot = $input.data('tooltip-bobot');
+            var target = $input.data('tooltip-target');
+            var satuan = $input.data('tooltip-satuan');
+
+            var tooltipHtml = `
+                <div class="indicator-tooltip">
+                    <div class="tooltip-row">
+                        <span class="tooltip-label">📅 Bulan:</span>
+                        <span class="tooltip-value">${month}</span>
+                    </div>
+                    <div class="tooltip-divider"></div>
+                    <div class="tooltip-row">
+                        <span class="tooltip-label">📋 Item:</span>
+                        <span class="tooltip-value">${item}</span>
+                    </div>
+                    <div class="tooltip-row">
+                        <span class="tooltip-label">📊 Indikator:</span>
+                        <span class="tooltip-value">${indikator}</span>
+                    </div>
+                    <div class="tooltip-row">
+                        <span class="tooltip-label">⚖️ Bobot:</span>
+                        <span class="tooltip-value">${bobot}</span>
+                    </div>
+                    <div class="tooltip-row">
+                        <span class="tooltip-label">🎯 Target:</span>
+                        <span class="tooltip-value">${target}</span>
+                    </div>
+                    <div class="tooltip-row">
+                        <span class="tooltip-label">📏 Satuan:</span>
+                        <span class="tooltip-value">${satuan}</span>
+                    </div>
+                </div>
+            `;
+
+            return tooltipHtml;
+        }
+
+        $('.realisasi-input').on('mouseenter focus', function() {
+            var $input = $(this);
+            var $cell = $input.closest('td');
+            var $row = $input.closest('tr');
+
+            $('.indicator-tooltip').remove();
+
+            var rowIndex = $row.index();
+            var isTopRow = rowIndex < 3; 
+
+            var $tooltip = $(createModernTooltip($input));
+
+            if (isTopRow) {
+                $tooltip.addClass('tooltip-bottom');
+            }
+
+            $cell.css('position', 'relative').append($tooltip);
+
+            setTimeout(function() {
+                $tooltip.addClass('show');
+            }, 10);
+        });
+
+        $('.realisasi-input').on('mouseleave blur', function() {
+            var $tooltip = $(this).closest('td').find('.indicator-tooltip');
+            $tooltip.removeClass('show');
+
+            setTimeout(function() {
+                $tooltip.remove();
+            }, 300);
+        });
+
         function formatValue(val, satuan) {
             if (!val || isNaN(val)) return '-';
 
@@ -220,7 +387,6 @@ $ENABLE_SAVE = has_permission('KPI.Manage');
 
             val = parseFloat(val);
 
-            // Cek merah (status_code = 0)
             if (thresholds.merah) {
                 var merahMin = parseFloat(thresholds.merah.min) || 0;
                 var merahMax = thresholds.merah.max !== null ? parseFloat(thresholds.merah.max) : Infinity;
@@ -229,7 +395,6 @@ $ENABLE_SAVE = has_permission('KPI.Manage');
                 }
             }
 
-            // Cek kuning (status_code = 1)
             if (thresholds.kuning) {
                 var kuningMin = parseFloat(thresholds.kuning.min) || 0;
                 var kuningMax = thresholds.kuning.max !== null ? parseFloat(thresholds.kuning.max) : Infinity;
@@ -238,7 +403,6 @@ $ENABLE_SAVE = has_permission('KPI.Manage');
                 }
             }
 
-            // Cek hijau (status_code = 2)
             if (thresholds.hijau) {
                 var hijauMin = parseFloat(thresholds.hijau.min) || 0;
                 var hijauMax = thresholds.hijau.max !== null ? parseFloat(thresholds.hijau.max) : Infinity;
@@ -294,13 +458,10 @@ $ENABLE_SAVE = has_permission('KPI.Manage');
 
             if (validValues.length > 0) {
                 if (sistem === 0) {
-                    // Rata-rata
                     skor = validValues.reduce((a, b) => a + b, 0) / validValues.length;
                 } else if (sistem === 1) {
-                    // Akumulatif
                     skor = values.reduce((a, b) => a + b, 0);
                 } else if (sistem === 2) {
-                    // Angka terakhir yang terisi
                     skor = validValues[validValues.length - 1];
                 }
             }
@@ -315,14 +476,12 @@ $ENABLE_SAVE = has_permission('KPI.Manage');
                     adjustedTarget = target * filledMonthsCount;
                 }
 
-                // Skor pencapaian bisa 0 jika memang realisasi 0
                 skorPencapaian = (skor / adjustedTarget) * 100;
             }
 
             $row.find('.skor-pencapaian').text(skorPencapaian >= 0 ? skorPencapaian.toFixed(2) : '-');
             $row.data('skor-pencapaian', skorPencapaian);
 
-            // Update warna cell
             $row.find('.realisasi-input').each(function() {
                 var $input = $(this);
                 var $cell = $input.closest('td');
