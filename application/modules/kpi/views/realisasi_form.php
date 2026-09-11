@@ -300,63 +300,90 @@ $ENABLE_SAVE = has_permission('KPI.Manage');
             var satuan = $input.data('tooltip-satuan');
 
             var tooltipHtml = `
-                <div class="indicator-tooltip">
-                    <div class="tooltip-row">
-                        <span class="tooltip-label">📅 Bulan:</span>
-                        <span class="tooltip-value">${month}</span>
-                    </div>
-                    <div class="tooltip-divider"></div>
-                    <div class="tooltip-row">
-                        <span class="tooltip-label">📋 Item:</span>
-                        <span class="tooltip-value">${item}</span>
-                    </div>
-                    <div class="tooltip-row">
-                        <span class="tooltip-label">📊 Indikator:</span>
-                        <span class="tooltip-value">${indikator}</span>
-                    </div>
-                    <div class="tooltip-row">
-                        <span class="tooltip-label">⚖️ Bobot:</span>
-                        <span class="tooltip-value">${bobot}</span>
-                    </div>
-                    <div class="tooltip-row">
-                        <span class="tooltip-label">🎯 Target:</span>
-                        <span class="tooltip-value">${target}</span>
-                    </div>
-                    <div class="tooltip-row">
-                        <span class="tooltip-label">📏 Satuan:</span>
-                        <span class="tooltip-value">${satuan}</span>
-                    </div>
+            <div class="indicator-tooltip">
+                <div class="tooltip-row">
+                    <span class="tooltip-label">📅 Bulan:</span>
+                    <span class="tooltip-value">${month}</span>
                 </div>
+                <div class="tooltip-divider"></div>
+                <div class="tooltip-row">
+                    <span class="tooltip-label">📋 Item:</span>
+                    <span class="tooltip-value">${item}</span>
+                </div>
+                <div class="tooltip-row">
+                    <span class="tooltip-label">📊 Indikator:</span>
+                    <span class="tooltip-value">${indikator}</span>
+                </div>
+                <div class="tooltip-row">
+                    <span class="tooltip-label">⚖️ Bobot:</span>
+                    <span class="tooltip-value">${bobot}</span>
+                </div>
+                <div class="tooltip-row">
+                    <span class="tooltip-label">🎯 Target:</span>
+                    <span class="tooltip-value">${target}</span>
+                </div>
+                <div class="tooltip-row">
+                    <span class="tooltip-label">📏 Satuan:</span>
+                    <span class="tooltip-value">${satuan}</span>
+                </div>
+            </div>
             `;
 
-            return tooltipHtml;
+            // Append ke body, bukan ke <td>, supaya lepas dari stacking context tabel
+            var $tooltip = $(tooltipHtml);
+            $('body').append($tooltip);
+
+            // Paksa paling atas via JS (inline style menang atas CSS di stylesheet)
+            $tooltip.css('z-index', 2147483647);
+
+            return $tooltip;
         }
 
         $('.realisasi-input').on('mouseenter focus', function() {
             var $input = $(this);
-            var $cell = $input.closest('td');
             var $row = $input.closest('tr');
 
-            $('.indicator-tooltip').remove();
+            // Bersihkan tooltip lama (sekarang nyari di body, bukan di dalam td)
+            $('body').children('.indicator-tooltip').remove();
+
+            var $tooltip = createModernTooltip($input);
 
             var rowIndex = $row.index();
-            var isTopRow = rowIndex < 3; 
+            var isTopRow = rowIndex < 3;
 
-            var $tooltip = $(createModernTooltip($input));
+            var inputOffset = $input.offset();
+            var inputWidth = $input.outerWidth();
+            var inputHeight = $input.outerHeight();
+            var tooltipWidth = $tooltip.outerWidth();
+            var tooltipHeight = $tooltip.outerHeight();
+
+            var left = inputOffset.left + (inputWidth / 2) - (tooltipWidth / 2);
+            var top;
 
             if (isTopRow) {
                 $tooltip.addClass('tooltip-bottom');
+                top = inputOffset.top + inputHeight + 8;
+            } else {
+                top = inputOffset.top - tooltipHeight - 8;
             }
 
-            $cell.css('position', 'relative').append($tooltip);
+            // Override posisi absolute/transform dari CSS lewat inline style
+            $tooltip.css({
+                position: 'absolute',
+                top: top + 'px',
+                left: left + 'px',
+                bottom: 'auto',
+                transform: 'none',
+                zIndex: 2147483647
+            });
 
             setTimeout(function() {
-                $tooltip.addClass('show');
+                $tooltip.addClass('show').css('transform', 'none');
             }, 10);
         });
 
         $('.realisasi-input').on('mouseleave blur', function() {
-            var $tooltip = $(this).closest('td').find('.indicator-tooltip');
+            var $tooltip = $('body').children('.indicator-tooltip');
             $tooltip.removeClass('show');
 
             setTimeout(function() {
