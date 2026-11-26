@@ -2,6 +2,9 @@
 
 class Users extends Front_Controller
 {
+    protected $site_key;
+    protected $secret_key;
+    protected $id_user;
 
     public function __construct()
     {
