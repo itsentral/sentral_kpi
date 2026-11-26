@@ -1,6 +1,8 @@
 <?php
 $mode = isset($mode) ? $mode : 'add';
 $is_readonly = ($mode === 'view');
+$employees = $is_readonly ? [] : $employees;
+$active_employee_ids = array_fill_keys(array_column($employees, 'id'), true);
 $header_id = isset($header) ? $header->id : 0;
 $form_action = ($mode === 'edit') ? 'kpi/update' : 'kpi/save';
 
@@ -292,9 +294,14 @@ $ENABLE_ADD = has_permission('KPI.Add');
                                     <td>
                                         <select name="pic_id[]" class="form-control pic-select" <?= $is_readonly ? 'disabled' : 'required' ?> style="width:100%">
                                             <option value="">- Pilih -</option>
+                                            <?php if ((string) $item->pic_id !== '' && !isset($active_employee_ids[$item->pic_id])): ?>
+                                                <option value="<?= html_escape($item->pic_id) ?>" selected>
+                                                    <?= html_escape($item->pic_name ?: $item->pic_id) ?><?= $is_readonly ? '' : ' (PIC tersimpan)' ?>
+                                                </option>
+                                            <?php endif; ?>
                                             <?php foreach ($employees as $emp): ?>
-                                                <option value="<?= $emp->id ?>" <?= ($item->pic_id == $emp->id) ? 'selected' : '' ?>>
-                                                    <?= htmlspecialchars($emp->name) ?>
+                                                <option value="<?= html_escape($emp->id) ?>" <?= (string) $item->pic_id === (string) $emp->id ? 'selected' : '' ?>>
+                                                    <?= html_escape($emp->name) ?>
                                                 </option>
                                             <?php endforeach; ?>
                                         </select>
@@ -369,7 +376,7 @@ $ENABLE_ADD = has_permission('KPI.Add');
                     <select name="pic_id[]" class="form-control pic-select" required style="width:100%">
                         <option value="">- Pilih -</option>
                         <?php foreach ($employees as $emp): ?>
-                            <option value="<?= $emp->id ?>"><?= htmlspecialchars($emp->name) ?></option>
+                            <option value="<?= html_escape($emp->id) ?>"><?= html_escape($emp->name) ?></option>
                         <?php endforeach; ?>
                     </select>
                 </td>

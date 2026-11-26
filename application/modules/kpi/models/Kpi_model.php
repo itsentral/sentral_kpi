@@ -66,8 +66,9 @@ class Kpi_model extends BF_Model
     {
         return $this->db
             ->select('id, name')
-            ->from('employees')
+            ->from('hr_sentral.employees')
             ->where('flag_active', 'Y')
+            ->order_by('name', 'ASC')
             ->get()
             ->result();
     }

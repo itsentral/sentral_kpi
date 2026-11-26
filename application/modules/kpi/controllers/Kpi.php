@@ -385,6 +385,12 @@ class Kpi extends Admin_Controller
       }
     }
 
+    $pic_names = $this->resolve_pic_names($post);
+    if ($pic_names === null) {
+      echo json_encode(['status' => 'error', 'message' => 'Pilih PIC aktif dari HR Sentral untuk setiap item KPI']);
+      return;
+    }
+
     $this->db->trans_start();
 
     $divisi_id = $post['divisi'];
@@ -411,8 +417,7 @@ class Kpi extends Admin_Controller
         if (empty($item)) continue;
 
         $pic_id = $post['pic_id'][$i];
-        $pic = $this->db->select('name')->get_where('employees', ['id' => $pic_id])->row();
-        $pic_name = $pic ? $pic->name : '';
+        $pic_name = $pic_names[$i];
 
         $bobot_value = 0;
         if ($post['bobot_enabled'] == 1 && isset($post['bobot'][$i])) {
@@ -518,6 +523,7 @@ class Kpi extends Admin_Controller
     }
 
     $data['mode'] = 'edit';
+    $data['employees'] = $this->Kpi_model->get_active_employees();
     $this->template->title('Edit KPI');
     history("Edit KPI ID: $id");
     $this->template->render('form', $data);
@@ -543,7 +549,6 @@ class Kpi extends Admin_Controller
       'header'    => $header,
       'items'     => $items,
       'divisions' => $this->Kpi_model->get_divisions(),
-      'employees' => $this->Kpi_model->get_active_employees(),
     ];
   }
 
@@ -589,6 +594,30 @@ class Kpi extends Admin_Controller
     return $result;
   }
 
+  private function resolve_pic_names($post, $old_items = [])
+  {
+    if (!isset($post['pic_id']) || !is_array($post['pic_id'])) {
+      return null;
+    }
+
+    $names = array_column($this->Kpi_model->get_active_employees(), 'name', 'id');
+    $names += array_column($old_items, 'pic_name', 'pic_id');
+
+    $pic_names = [];
+    foreach ($post['item'] as $i => $item) {
+      if (empty($item)) continue;
+
+      $pic_id = $post['pic_id'][$i] ?? null;
+      if (!is_string($pic_id) || $pic_id === '' || !isset($names[$pic_id])) {
+        return null;
+      }
+
+      $pic_names[$i] = $names[$pic_id];
+    }
+
+    return $pic_names;
+  }
+
   public function update()
   {
     $this->auth->restrict($this->managePermission);
@@ -623,6 +652,13 @@ class Kpi extends Admin_Controller
       }
     }
 
+    $old_items = $this->Kpi_model->get_items_by_header($header_id);
+    $pic_names = $this->resolve_pic_names($post, $old_items);
+    if ($pic_names === null) {
+      echo json_encode(['status' => 'error', 'message' => 'Pilih PIC aktif dari HR Sentral atau pertahankan PIC yang sudah tercatat pada KPI ini']);
+      return;
+    }
+
     $this->db->trans_start();
 
     $divisi_id = $post['divisi'];
@@ -644,7 +680,6 @@ class Kpi extends Admin_Controller
     $this->db->where('id', $header_id);
     $this->db->update('kpi_headers', $header_data);
 
-    $old_items = $this->db->select('id')->get_where('kpi_items', ['header_id' => $header_id])->result();
     foreach ($old_items as $old_item) {
       $this->db->delete('kpi_thresholds', ['kpi_item_id' => $old_item->id]);
     }
@@ -655,8 +690,7 @@ class Kpi extends Admin_Controller
         if (empty($item)) continue;
 
         $pic_id = $post['pic_id'][$i];
-        $pic = $this->db->select('name')->get_where('employees', ['id' => $pic_id])->row();
-        $pic_name = $pic ? $pic->name : '';
+        $pic_name = $pic_names[$i];
 
         $bobot_value = 0;
         if ($post['bobot_enabled'] == 1 && isset($post['bobot'][$i])) {
